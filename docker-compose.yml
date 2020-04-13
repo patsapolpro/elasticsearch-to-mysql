@@ -1,0 +1,52 @@
+version: '2'
+
+services:
+  db:
+    image: mysql
+    environment:
+      TZ: 'Asia/Bangkok'
+      MYSQL_DATABASE: myspace
+      MYSQL_ROOT_PASSWORD: password
+    ports:
+      - "3306:3306"
+    networks:
+      - elk
+    volumes:
+      - my-db:/var/lib/mysql
+
+  elasticsearch:
+    build:
+      context: elasticsearch/
+    volumes:
+      - ./elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      ES_JAVA_OPTS: '-Xmx1g -Xms1g'
+    networks:
+      - elk
+
+
+  logstash:
+    build:
+      context: logstash/
+    volumes:
+      - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml
+      - ./logstash/pipeline:/usr/share/logstash/pipeline
+      - ./logstash/lib/jars:/usr/share/logstash/lib/jars
+    ports:
+      - "5000:5000"
+    environment:
+      ES_JAVA_OPTS: '-Xmx1g -Xms1g'
+    networks:
+      - elk
+    depends_on:
+      - db
+
+volumes:
+  my-db: 
+
+networks:
+  elk:
+    driver: bridge
